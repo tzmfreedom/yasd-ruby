@@ -22,22 +22,22 @@ $ yasd export -q "SELECT id FROM Account"
 
 Insert
 ```bash
-$ yasd insert -f "/path/to/insert.csv
+$ yasd insert -f /path/to/insert.csv
 ```
 
 Update
 ```bash
-$ yasd update -f "/path/to/update.csv
+$ yasd update -f /path/to/update.csv
 ```
 
 Upsert
 ```bash
-$ yasd upsert -f "/path/to/upsert.csv -k externalkey__c
+$ yasd upsert -f /path/to/upsert.csv -k externalkey__c
 ```
 
 Delete
 ```bash
-$ yasd delete -f "/path/to/delete.csv
+$ yasd delete -f /path/to/delete.csv
 ```
 
 

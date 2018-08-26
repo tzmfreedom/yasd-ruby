@@ -16,8 +16,9 @@ module Yasd
       @client.authenticate(username: config[:username], password: config[:password])
       @success_logger = Logger.new(config[:success_log_path] || "./results/#{Time.now.strftime("%Y-%m-%d")}_success.log")
       @error_logger = Logger.new(config[:success_log_path] || "./results/#{Time.now.strftime("%Y-%m-%d")}_error.log")
-      @mappings = config[:mapping_file_path] ? YAML.load_file(config[:mapping_file_path]) : {}
+      @mapper = Mapper.new(config[:mapping_file_path])
       @converter = Converter.new(config[:convert_file_path])
+      @batch_size = config[:batch_size] || BATCH_SIZE
     end
 
     def export(query)
@@ -41,7 +42,7 @@ module Yasd
       CSV.foreach(filename, headers: true) do |data|
         total_record_size += 1
         insert_records << convert_and_mapping(data)
-        if insert_records.length == BATCH_SIZE
+        if insert_records.length == @batch_size
           insert_results = client.create!(object, insert_records)
           log(insert_results)
           insert_records = []
@@ -60,7 +61,7 @@ module Yasd
       CSV.foreach(filename, headers: true) do |data|
         total_record_size += 1
         update_records << convert_and_mapping(data)
-        if update_records.length == BATCH_SIZE
+        if update_records.length == @batch_size
           update_results = client.update(object, update_records)
           log(update_results)
           update_records = []
@@ -79,7 +80,7 @@ module Yasd
       CSV.foreach(filename, headers: true) do |data|
         total_record_size += 1
         delete_records << data[:Id]
-        if delete_records.length == BATCH_SIZE
+        if delete_records.length == @batch_size
           delete_results = client.delete(object, delete_records)
           log(delete_results)
           delete_records = []
@@ -98,7 +99,7 @@ module Yasd
       CSV.foreach(filename, headers: true) do |data|
         total_record_size += 1
         upsert_records << convert_and_mapping(data)
-        if upsert_records.length == 400
+        if upsert_records.length == @batch_size
           upsert_results = client.upsert(object, upsert_key, upsert_records)
           log(upsert_results)
           upsert_records = []
@@ -123,18 +124,8 @@ module Yasd
       end
 
       def convert_and_mapping(data)
-        converted_data = data.headers.each_with_object({}) do |field, new_object|
-          new_object[field] = @converter.call(field, data[field])
-          new_object
-        end
-
-        mappinged_data = converted_data.each_with_object({}) do |(field, value), new_object|
-          new_key = @mappings[field] || field
-          new_object[new_key] = value
-          new_object
-        end
-
-        mappinged_data
+        converted_data = @converter.call(data)
+        @mapper.call(converted_data)
       end
 
       def create_csv_header(query_result)
