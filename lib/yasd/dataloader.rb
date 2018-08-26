@@ -17,7 +17,7 @@ module Yasd
       @success_logger = Logger.new(config[:success_log_path] || "./results/#{Time.now.strftime('%Y-%m-%d')}_success.log")
       @error_logger = Logger.new(config[:success_log_path] || "./results/#{Time.now.strftime('%Y-%m-%d')}_error.log")
       @mappings = config[:mapping_file_path] ? YAML.load_file(config[:mapping_file_path]) : {}
-      @converters = config[:convert_file_path] ? Converter.new(config[:convert_file_path]) : {}
+      @converter = Converter.new(config[:convert_file_path])
     end
 
     def export(query)
@@ -124,10 +124,7 @@ module Yasd
 
     def convert_and_mapping(data)
       converted_data = data.headers.each_with_object({}) do |field, new_object|
-        converters = @converters[field] || []
-        new_object[field] = converters.reduce(data[field]) do |converter, value|
-          converter.call(value)
-        end
+        new_object[field] = @converter.call(field, data[field])
         new_object
       end
 

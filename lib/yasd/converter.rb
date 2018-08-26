@@ -4,20 +4,21 @@ module Yasd
   class Converter
     def initialize(filename)
       @converters = {}
-      contents = File.read(filename)
-      instance_eval(contents)
+      if filename
+        contents = File.read(filename)
+        instance_eval(contents)
+      end
     end
 
     def call(header, value)
-      return unless @converters[header]
-      @converters[header].reduce(value) do |result, proc|
-        proc.call
+      (@converters[header] || []).reduce(value) do |result, proc|
+        proc.call(value)
       end
     end
 
     private
 
-    def converter(header, &block)
+    def convert(header, &block)
       @converters[header] ||= []
       @converters[header] << block
     end

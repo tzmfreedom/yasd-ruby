@@ -1,6 +1,10 @@
 .PHONY: insert
 insert:
-	bundle exec exe/yasd insert -f examples/accounts.csv -c examples/config.rb -o Account
+	bundle exec exe/yasd insert -f examples/accounts.csv \
+	  -c examples/config.rb \
+	  -o Account \
+	  -m examples/account.sdl.yml \
+	  -C examples/account.cvt.rb
 
 .PHONY: load
 load:
