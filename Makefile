@@ -6,9 +6,11 @@ insert:
 	  -m examples/account.sdl.yml \
 	  -C examples/account.cvt.rb
 
-.PHONY: load
-load:
-	bundle exec exe/yasd load -f examples/accounts.csv -c examples/config.rb -q "SELECT Id, Name FROM Message__c"
+.PHONY: export
+export:
+	bundle exec exe/yasd export -f examples/accounts.csv \
+	  -c examples/config.rb \
+	  -q "SELECT Id, Name FROM Message__c"
 
 .PHONY: rubocop
 rubocop:
@@ -17,3 +19,7 @@ rubocop:
 .PHONY: test
 test:
 	bundle exec rspec
+
+.PHONY: build
+build:
+	docker build -t tzmfreedom/yasd .

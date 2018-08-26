@@ -11,16 +11,16 @@ module Yasd
     end
 
     def call(header, value)
-      (@converters[header] || []).reduce(value) do |result, proc|
+      (@converters[header] || []).reduce(value) do |_result, proc|
         proc.call(value)
       end
     end
 
     private
 
-    def convert(header, &block)
-      @converters[header] ||= []
-      @converters[header] << block
-    end
+      def convert(header, &block)
+        @converters[header] ||= []
+        @converters[header] << block
+      end
   end
 end

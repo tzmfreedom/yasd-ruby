@@ -14,8 +14,8 @@ module Yasd
     def initialize(config)
       @client = Soapforce::Client.new
       @client.authenticate(username: config[:username], password: config[:password])
-      @success_logger = Logger.new(config[:success_log_path] || "./results/#{Time.now.strftime('%Y-%m-%d')}_success.log")
-      @error_logger = Logger.new(config[:success_log_path] || "./results/#{Time.now.strftime('%Y-%m-%d')}_error.log")
+      @success_logger = Logger.new(config[:success_log_path] || "./results/#{Time.now.strftime("%Y-%m-%d")}_success.log")
+      @error_logger = Logger.new(config[:success_log_path] || "./results/#{Time.now.strftime("%Y-%m-%d")}_error.log")
       @mappings = config[:mapping_file_path] ? YAML.load_file(config[:mapping_file_path]) : {}
       @converter = Converter.new(config[:convert_file_path])
     end
@@ -29,7 +29,7 @@ module Yasd
         csv_out << header
 
         query_result.each do |record|
-          csv_out << header.map { |field| record[field] }
+          csv_out << header.map {|field| record[field] }
         end
       end
     end
@@ -112,33 +112,33 @@ module Yasd
 
     private
 
-    def log(results)
-      results.each do |result|
-        if result[:success]
-          @success_logger.info(result.values.join(','))
-        else
-          @error_logger.info(result.values.join(','))
+      def log(results)
+        results.each do |result|
+          if result[:success]
+            @success_logger.info(result.values.join(','))
+          else
+            @error_logger.info(result.values.join(','))
+          end
         end
       end
-    end
 
-    def convert_and_mapping(data)
-      converted_data = data.headers.each_with_object({}) do |field, new_object|
-        new_object[field] = @converter.call(field, data[field])
-        new_object
+      def convert_and_mapping(data)
+        converted_data = data.headers.each_with_object({}) do |field, new_object|
+          new_object[field] = @converter.call(field, data[field])
+          new_object
+        end
+
+        mappinged_data = converted_data.each_with_object({}) do |(field, value), new_object|
+          new_key = @mappings[field] || field
+          new_object[new_key] = value
+          new_object
+        end
+
+        mappinged_data
       end
 
-      mappinged_data = converted_data.each_with_object({}) do |(field, value), new_object|
-        new_key = @mappings[field] || field
-        new_object[new_key] = value
-        new_object
+      def create_csv_header(query_result)
+        query_result.first.to_h.reject {|k, _v| %i[type @xsi:type].include?(k) }.keys
       end
-
-      mappinged_data
-    end
-
-    def create_csv_header(query_result)
-      query_result.first.to_h.reject { |k, v| %i[type @xsi:type].include?(k) }.keys
-    end
   end
 end
