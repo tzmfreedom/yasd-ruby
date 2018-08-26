@@ -1,0 +1,147 @@
+# frozen_string_literal: true
+
+require 'csv'
+require 'yaml'
+require 'soapforce'
+require 'yasd/converter'
+
+module Yasd
+  class Dataloader
+    attr_accessor :client
+
+    BATCH_SIZE = 400
+
+    def initialize(config)
+      @client = Soapforce::Client.new
+      @client.authenticate(username: config[:username], password: config[:password])
+      @success_logger = Logger.new(config[:success_log_path] || "./results/#{Time.now.strftime('%Y-%m-%d')}_success.log")
+      @error_logger = Logger.new(config[:success_log_path] || "./results/#{Time.now.strftime('%Y-%m-%d')}_error.log")
+      @mappings = config[:mapping_file_path] ? YAML.load_file(config[:mapping_file_path]) : {}
+      @converters = config[:convert_file_path] ? Converter.new(config[:convert_file_path]) : {}
+    end
+
+    def export(query)
+      query_result = client.query(query)
+      return if query_result.size == 0
+
+      CSV do |csv_out|
+        header = create_csv_header(query_result)
+        csv_out << header
+
+        query_result.each do |record|
+          csv_out << header.map { |field| record[field] }
+        end
+      end
+    end
+
+    def insert(object, filename)
+      insert_records = []
+      total_record_size = 0
+
+      CSV.foreach(filename, headers: true) do |data|
+        total_record_size += 1
+        insert_records << convert_and_mapping(data)
+        if insert_records.length == BATCH_SIZE
+          insert_results = client.create!(object, insert_records)
+          log(insert_results)
+          insert_records = []
+        end
+      end
+      if insert_records.length > 0
+        insert_results = client.create!(object, insert_records)
+        log(insert_results)
+      end
+    end
+
+    def update(object, filename)
+      update_records = []
+      total_record_size = 0
+
+      CSV.foreach(filename, headers: true) do |data|
+        total_record_size += 1
+        update_records << convert_and_mapping(data)
+        if update_records.length == BATCH_SIZE
+          update_results = client.update(object, update_records)
+          log(update_results)
+          update_records = []
+        end
+      end
+      if update_records.length > 0
+        update_results = client.update(object, update_records)
+        log(update_results)
+      end
+    end
+
+    def delete(object, filename)
+      delete_records = []
+      total_record_size = 0
+
+      CSV.foreach(filename, headers: true) do |data|
+        total_record_size += 1
+        delete_records << data[:Id]
+        if delete_records.length == BATCH_SIZE
+          delete_results = client.delete(object, delete_records)
+          log(delete_results)
+          delete_records = []
+        end
+      end
+      if delete_records.length > 0
+        delete_results = client.delete(object, delete_records)
+        log(delete_results)
+      end
+    end
+
+    def upsert(object, upsert_key, filename)
+      upsert_records = []
+      total_record_size = 0
+
+      CSV.foreach(filename, headers: true) do |data|
+        total_record_size += 1
+        upsert_records << convert_and_mapping(data)
+        if upsert_records.length == 400
+          upsert_results = client.upsert(object, upsert_key, upsert_records)
+          log(upsert_results)
+          upsert_records = []
+        end
+      end
+      if upsert_records.length > 0
+        upsert_results = client.upsert(object, upsert_key, upsert_records)
+        log(upsert_results)
+      end
+    end
+
+    private
+
+    def log(results)
+      results.each do |result|
+        if result[:success]
+          @success_logger.info(result.values.join(','))
+        else
+          @error_logger.info(result.values.join(','))
+        end
+      end
+    end
+
+    def convert_and_mapping(data)
+      converted_data = data.headers.each_with_object({}) do |field, new_object|
+        converters = @converters[field] || []
+        new_object[field] = converters.reduce(data[field]) do |converter, value|
+          converter.call(value)
+        end
+        new_object
+      end
+
+      mappinged_data = converted_data.each_with_object({}) do |(field, value), new_object|
+        new_key = @mappings[field] || field
+        new_object[new_key] = value
+        new_object
+      end
+
+      mappinged_data
+    end
+
+    def create_csv_header(query_result)
+      query_result.first.to_h.reject { |k, v| %i[type @xsi:type].include?(k) }.keys
+    end
+  end
+end

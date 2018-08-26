@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+
+# frozen_string_literal: true
+
+require 'yasd/cli'
+require 'pry-byebug'
+
+require 'dotenv'
+Dotenv.load
+
+Yasd::CLI.start(ARGV)
