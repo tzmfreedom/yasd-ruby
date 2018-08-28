@@ -1,86 +1,87 @@
 # frozen_string_literal: true
 
 require 'thor'
+require 'yaml'
 require 'yasd/dataloader'
 
 module Yasd
   class CLI < Thor
     desc 'load', 'Load to Salesforce with local file'
     method_option :query, type: :string, aliases: ['-q']
-    method_option :file, type: :string, aliases: ['-f']
     method_option :config, type: :string, aliases: ['-c']
+    method_option :username, type: :string, aliases: ['-u'], default: ENV['SALESFORCE_USERNAME']
+    method_option :password, type: :string, aliases: ['-p'], default: ENV['SALESFORCE_PASSWORD']
+    method_option :api_version, type: :string, default: ENV['SALESFORCE_API_VERSION']
     def export
-      dataloader = Dataloader.new(username: ENV['SALESFORCE_USERNAME'],
-                                  password: ENV['SALESFORCE_PASSWORD'],
-                                  api_version: ENV['SALESFORCE_API_VERSION'],
-                                  client_id: ENV['SALESFORCE_CLIENT_ID'],
-                                  client_secret: ENV['SALESFORCE_CLIENT_SECRET'])
-      dataloader.export(options[:query])
+      config = create_config(options.config)
+      dataloader = Dataloader.new(config)
+      dataloader.export(config.query)
     end
 
     desc 'insert', 'Insert records'
     method_option :file, type: :string, aliases: ['-f']
     method_option :object, type: :string, aliases: ['-o']
+    method_option :config, type: :string, aliases: ['-c']
     method_option :mapping, type: :string, aliases: ['-m']
     method_option :convert, type: :string, aliases: ['-C']
-    method_option :config, type: :string, aliases: ['-c']
+    method_option :username, type: :string, aliases: ['-u'], default: ENV['SALESFORCE_USERNAME']
+    method_option :password, type: :string, aliases: ['-p'], default: ENV['SALESFORCE_PASSWORD']
+    method_option :api_version, type: :string, default: ENV['SALESFORCE_API_VERSION']
     def insert
-      dataloader = Dataloader.new(username: ENV['SALESFORCE_USERNAME'],
-                                  password: ENV['SALESFORCE_PASSWORD'],
-                                  api_version: ENV['SALESFORCE_API_VERSION'],
-                                  client_id: ENV['SALESFORCE_CLIENT_ID'],
-                                  client_secret: ENV['SALESFORCE_CLIENT_SECRET'],
-                                  mapping_file_path: options[:mapping],
-                                  convert_file_path: options[:convert])
-      dataloader.insert(options[:object], options[:file])
+      config = create_config(options.config)
+      dataloader = Dataloader.new(config)
+      dataloader.insert(config.object, config.file)
     end
 
     desc 'update', 'Update records'
     method_option :file, type: :string, aliases: ['-f']
     method_option :object, type: :string, aliases: ['-o']
+    method_option :config, type: :string, aliases: ['-c']
     method_option :mapping, type: :string, aliases: ['-m']
     method_option :convert, type: :string, aliases: ['-C']
-    method_option :config, type: :string, aliases: ['-c']
+    method_option :username, type: :string, aliases: ['-u'], default: ENV['SALESFORCE_USERNAME']
+    method_option :password, type: :string, aliases: ['-p'], default: ENV['SALESFORCE_PASSWORD']
+    method_option :api_version, type: :string, default: ENV['SALESFORCE_API_VERSION']
     def update
-      dataloader = Dataloader.new(username: ENV['SALESFORCE_USERNAME'],
-                                  password: ENV['SALESFORCE_PASSWORD'],
-                                  api_version: ENV['SALESFORCE_API_VERSION'],
-                                  client_id: ENV['SALESFORCE_CLIENT_ID'],
-                                  client_secret: ENV['SALESFORCE_CLIENT_SECRET'],
-                                  mapping_file_path: options[:mapping],
-                                  convert_file_path: options[:convert])
-      dataloader.update(options[:object], options[:file])
+      config = create_config(options.config)
+      dataloader = Dataloader.new(config)
+      dataloader.update(config.object, config.file)
     end
 
     desc 'upsert', 'Upsert records'
     method_option :file, type: :string, aliases: ['-f']
     method_option :object, type: :string, aliases: ['-o']
+    method_option :upsert_key, type: :string, aliases: ['-k']
     method_option :mapping, type: :string, aliases: ['-m']
     method_option :convert, type: :string, aliases: ['-C']
-    method_option :upsert_key, type: :string, aliases: ['-k']
     method_option :config, type: :string, aliases: ['-c']
+    method_option :username, type: :string, aliases: ['-u'], default: ENV['SALESFORCE_USERNAME']
+    method_option :password, type: :string, aliases: ['-p'], default: ENV['SALESFORCE_PASSWORD']
+    method_option :api_version, type: :string, default: ENV['SALESFORCE_API_VERSION']
     def upsert
-      dataloader = Dataloader.new(username: ENV['SALESFORCE_USERNAME'],
-                                  password: ENV['SALESFORCE_PASSWORD'],
-                                  api_version: ENV['SALESFORCE_API_VERSION'],
-                                  client_id: ENV['SALESFORCE_CLIENT_ID'],
-                                  client_secret: ENV['SALESFORCE_CLIENT_SECRET'],
-                                  mapping_file_path: options[:mapping],
-                                  convert_file_path: options[:convert])
-      dataloader.upsert(options[:object], options[:upsert_key], options[:file])
+      config = create_config(options.config)
+      dataloader = Dataloader.new(config)
+      dataloader.upsert(config.object, config.upsert_key, config.file)
     end
 
     desc 'delete', 'Delete records'
     method_option :file, type: :string, aliases: ['-f']
     method_option :object, type: :string, aliases: ['-o']
     method_option :config, type: :string, aliases: ['-c']
+    method_option :username, type: :string, aliases: ['-u'], default: ENV['SALESFORCE_USERNAME']
+    method_option :password, type: :string, aliases: ['-p'], default: ENV['SALESFORCE_PASSWORD']
+    method_option :api_version, type: :string, default: ENV['SALESFORCE_API_VERSION']
     def delete
-      dataloader = Dataloader.new(username: ENV['SALESFORCE_USERNAME'],
-                                  password: ENV['SALESFORCE_PASSWORD'],
-                                  api_version: ENV['SALESFORCE_API_VERSION'],
-                                  client_id: ENV['SALESFORCE_CLIENT_ID'],
-                                  client_secret: ENV['SALESFORCE_CLIENT_SECRET'])
-      dataloader.delete(options[:object], options[:file])
+      config = create_config(options.config)
+      dataloader = Dataloader.new(config)
+      dataloader.delete(config.object, config.file)
+    end
+
+    private
+
+    def create_config(filepath)
+      config = YAML.load_file(filepath)
+      options.merge(config)
     end
   end
 end

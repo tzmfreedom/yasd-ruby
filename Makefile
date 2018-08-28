@@ -8,8 +8,8 @@ insert:
 
 .PHONY: export
 export:
-	bundle exec exe/yasd export -f examples/accounts.csv \
-	  -c examples/config.rb \
+	bundle exec exe/yasd export \
+	  -c examples/config.yml \
 	  -q "SELECT Id, Name FROM Message__c"
 
 .PHONY: rubocop

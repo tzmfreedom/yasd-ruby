@@ -2,8 +2,8 @@
 
 module Yasd
   class Mapper
-    def initalize(filepath)
-      @mappings = YAML.load_file(filepath)
+    def initialize(filepath)
+      @mappings = filepath ? YAML.load_file(filepath) : {}
     end
 
     def call(data)

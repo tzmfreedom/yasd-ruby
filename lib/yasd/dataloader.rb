@@ -3,6 +3,7 @@
 require 'csv'
 require 'yaml'
 require 'soapforce'
+require 'yasd/mapper'
 require 'yasd/converter'
 
 module Yasd
@@ -13,12 +14,12 @@ module Yasd
 
     def initialize(config)
       @client = Soapforce::Client.new
-      @client.authenticate(username: config[:username], password: config[:password])
-      @success_logger = Logger.new(config[:success_log_path] || "./results/#{Time.now.strftime("%Y-%m-%d")}_success.log")
-      @error_logger = Logger.new(config[:success_log_path] || "./results/#{Time.now.strftime("%Y-%m-%d")}_error.log")
-      @mapper = Mapper.new(config[:mapping_file_path])
-      @converter = Converter.new(config[:convert_file_path])
-      @batch_size = config[:batch_size] || BATCH_SIZE
+      @client.authenticate(username: config.username, password: config.password)
+      @success_logger = Logger.new(config.success_log_path || "./results/#{Time.now.strftime("%Y-%m-%d")}_success.log")
+      @error_logger = Logger.new(config.success_log_path || "./results/#{Time.now.strftime("%Y-%m-%d")}_error.log")
+      @mapper = Mapper.new(config.mapping)
+      @converter = Converter.new(config.convert)
+      @batch_size = config.batch_size || BATCH_SIZE
     end
 
     def export(query)
@@ -113,23 +114,23 @@ module Yasd
 
     private
 
-      def log(results)
-        results.each do |result|
-          if result[:success]
-            @success_logger.info(result.values.join(','))
-          else
-            @error_logger.info(result.values.join(','))
-          end
+    def log(results)
+      results.each do |result|
+        if result[:success]
+          @success_logger.info(result.values.join(','))
+        else
+          @error_logger.info(result.values.join(','))
         end
       end
+    end
 
-      def convert_and_mapping(data)
-        converted_data = @converter.call(data)
-        @mapper.call(converted_data)
-      end
+    def convert_and_mapping(data)
+      converted_data = @converter.call(data)
+      @mapper.call(converted_data)
+    end
 
-      def create_csv_header(query_result)
-        query_result.first.to_h.reject {|k, _v| %i[type @xsi:type].include?(k) }.keys
-      end
+    def create_csv_header(query_result)
+      query_result.first.to_h.reject {|k, _v| %i[type @xsi:type].include?(k) }.keys
+    end
   end
 end
