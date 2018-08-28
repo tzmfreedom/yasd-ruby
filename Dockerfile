@@ -6,4 +6,4 @@ WORKDIR /myapp
 
 RUN gem install yasd
 
-CMD ["bundle", "exec", "rasd", "-h"]
+CMD ["bundle", "exec", "yasd", "-h"]
