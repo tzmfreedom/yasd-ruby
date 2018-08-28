@@ -10,8 +10,8 @@ Gem::Specification.new do |spec|
   spec.authors       = ['tzmfreedom']
   spec.email         = ['makoto_tajitsu@hotmail.co.jp']
 
-  spec.summary       = ''
-  spec.description   = ''
+  spec.summary       = 'Yet Another Salesforce Detaloader'
+  spec.description   = 'Yet Another Salesforce Dataloader'
   spec.homepage      = 'https://github.com/tzmfreedom/yasd'
   spec.license       = 'MIT'
 
