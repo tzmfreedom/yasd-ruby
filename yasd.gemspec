@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
 
   spec.summary       = 'Yet Another Salesforce Detaloader'
   spec.description   = 'Yet Another Salesforce Dataloader'
-  spec.homepage      = 'https://github.com/tzmfreedom/yasd'
+  spec.homepage      = 'https://github.com/tzmfreedom/yasd-ruby'
   spec.license       = 'MIT'
 
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
