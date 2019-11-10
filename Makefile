@@ -23,3 +23,7 @@ test:
 .PHONY: build
 build:
 	docker build -t tzmfreedom/yasd .
+
+.PHONY: release
+release:
+	bundle exec rake release
